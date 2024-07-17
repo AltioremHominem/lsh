@@ -32,14 +32,10 @@ int lsh_num_builtins() {
   	return sizeof(builtin_str) / sizeof(char *);
 }
 
-/*
-  Builtin function implementations.
-*/
 
-/**
-   @brief Builtin command: change directory.
-   @param args List of args.  args[0] is "cd".  args[1] is the directory.
-   @return Always returns 1, to continue executing.
+/*
+   Builtin command: change directory.
+   args[0] is "cd".  args[1] is the directory.
  */
 int lsh_cd(char **args){
 
@@ -53,10 +49,8 @@ int lsh_cd(char **args){
   	return 1;
 }
 
-/**
-   @brief Builtin command: print help.
-   @param args List of args.  Not examined.
-   @return Always returns 1, to continue executing.
+/*
+   Builtin command: print help.
  */
 int lsh_help(char **args){
 
@@ -73,20 +67,17 @@ int lsh_help(char **args){
   	return 1;
 }
 
-/**
-   @brief Builtin command: exit.
-   @param args List of args.  Not examined.
-   @return Always returns 0, to terminate execution.
+/*
+   Builtin command: exit.
+   Always returns 0, to terminate execution.
  */
 int lsh_exit(char **args){
 
   	return 0;
 }
 
-/**
-  @brief Launch a program and wait for it to terminate.
-  @param args Null terminated list of arguments (including program).
-  @return Always returns 1, to continue execution.
+/*
+    Launch a program and wait for it to terminate.
  */
 int lsh_launch(char **args){
 
@@ -113,17 +104,14 @@ int lsh_launch(char **args){
   	return 1;
 }
 
-/**
-   @brief Execute shell built-in or launch program.
-   @param args Null terminated list of arguments.
-   @return 1 if the shell should continue running, 0 if it should terminate
- */
-int lsh_execute(char **args)
-{
+/*
+	Execute shell built-in or launch program.
+*/
+int lsh_execute(char **args){
+
   	int i;
 
   	if (args[0] == NULL) {
-    		// An empty command was entered.
     		return 1;
   	}
 
@@ -136,9 +124,8 @@ int lsh_execute(char **args)
   	return lsh_launch(args);
 }
 
-/**
-   @brief Read a line of input from stdin.
-   @return The line from stdin.
+/*
+    Read a line of input from stdin. 
  */
 char *lsh_read_line(void){
 
@@ -155,52 +142,53 @@ char *lsh_read_line(void){
   	}
   	return line;
 #else
-#define LSH_RL_BUFSIZE 1024
+	const int LSH_RL_BUFSIZE = 1024;
+
   	int bufsize = LSH_RL_BUFSIZE;
   	int position = 0;
   	char *buffer = malloc(sizeof(char) * bufsize);
-  	int c;
+  	int character;
 
   	if (!buffer) {
     		fprintf(stderr, "lsh: allocation error\n");
     		exit(EXIT_FAILURE);
   	}
 
-  while (1) {
-    // Read a character
-    	c = getchar();
+  	while (1) {
+    		character = getchar();
 
-    	if (c == EOF) {
-      		exit(EXIT_SUCCESS);
-    	} else if (c == '\n') {
-      		buffer[position] = '\0';
-      		return buffer;
-    	} else {
-     		buffer[position] = c;
-    	}
-    		position++;
+    		if (character == EOF) {
+      			exit(EXIT_SUCCESS);
+    		} else if (character == '\n') {
+      			buffer[position] = '\0';
+      			return buffer;
+    		} else {
+     			buffer[position] = character;
+    		}
+    			position++;
 
-   	 // If we have exceeded the buffer, reallocate.
-    	if (position >= bufsize) {
-      		bufsize += LSH_RL_BUFSIZE;
-      		buffer = realloc(buffer, bufsize);
-      		if (!buffer) {
-        		fprintf(stderr, "lsh: allocation error\n");
-        		exit(EXIT_FAILURE);
-     		}
-    	}
-  }
+   	 	// If we have exceeded the buffer, reallocate.
+    		if (position >= bufsize) {
+      			bufsize += LSH_RL_BUFSIZE;
+      			buffer = realloc(buffer, bufsize);
+      			if (!buffer) {
+        			fprintf(stderr, "lsh: allocation error\n");
+        			exit(EXIT_FAILURE);
+     			}
+    		}
+ 	}
 #endif
 }
 
-#define LSH_TOK_BUFSIZE 64
-#define LSH_TOK_DELIM " \t\r\n\a"
-/**
-   @brief Split a line into tokens (very naively).
-   @param line The line.
-   @return Null-terminated array of tokens.
+
+/*
+   Split a line into tokens (very naively).
  */
 char **lsh_split_line(char *line){
+
+	const int LSH_TOK_BUFSIZE = 64;
+	const char* LSH_TOK_DELIM = " \t\r\n\a";
+
 
   	int bufsize = LSH_TOK_BUFSIZE, position = 0;
   	char **tokens = malloc(bufsize * sizeof(char*));
@@ -233,24 +221,23 @@ char **lsh_split_line(char *line){
   	return tokens;
 }
 
-/**
-   @brief Loop getting input and executing it.
+/*
+    Loop getting input and executing it.
  */
 void lsh_loop(void){
 
   	char *line;
   	char **args;
-  	int status;
+  	bool status = 1;
 
-  	do {
-    		printf("> ");
-    		line = lsh_read_line();
-    		args = lsh_split_line(line);
-    		status = lsh_execute(args);
-
+	while (status){
+		printf("> ");
+		line = lsh_read_line();
+		args = lsh_split_line(line);
+		status = lsh_execute(args);
     		free(line);
     		free(args);
-  	} while (status);
+	}
 }
 
 
