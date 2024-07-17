@@ -82,23 +82,24 @@ int lsh_exit(char **args){
 int lsh_launch(char **args){
 
   	pid_t pid;
-  	int status;
+  	bool status;
 
   	pid = fork();
   	if (pid == 0) {
     	// Child process
     		if (execvp(args[0], args) == -1) {
-      		perror("lsh");
+      			perror("lsh");
     		}
     		exit(EXIT_FAILURE);
   	} else if (pid < 0) {
     		// Error forking
     		perror("lsh");
   	} else {
-    	// Parent process
-    	do {
-     		waitpid(pid, &status, WUNTRACED);
-    	} while (!WIFEXITED(status) && !WIFSIGNALED(status));
+    	// Parent process     	
+		waitpid(pid, &status, WUNTRACED);	
+    		while (!WIFEXITED(status) && !WIFSIGNALED(status)){
+			waitpid(pid, &status, WUNTRACED);
+		}
   	}
 
   	return 1;
@@ -244,7 +245,6 @@ void lsh_loop(void){
 int main(int argc, char **argv){
 	// Load config files, if any.
 
-	// Run command loop.
 	lsh_loop();
 
 	// Perform any shutdown/cleanup.
