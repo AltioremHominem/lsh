@@ -6,75 +6,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-/*
-  Function Declarations for builtin shell commands:
- */
-int lsh_cd(char **args);
-int lsh_help(char **args);
-int lsh_exit(char **args);
 
-/*
-  List of builtin commands, followed by their corresponding functions.
- */
-char *builtin_str[] = {
-  	"cd",
-  	"help",
-  	"exit"
-};
-
-int (*builtin_func[]) (char **) = {
-  	&lsh_cd,
-  	&lsh_help,
-  	&lsh_exit
-};
-
-int lsh_num_builtins() {
-  	return sizeof(builtin_str) / sizeof(char *);
-}
-
-
-/*
-   Builtin command: change directory.
-   args[0] is "cd".  args[1] is the directory.
- */
-int lsh_cd(char **args){
-
-  	if (args[1] == NULL) {
-    		fprintf(stderr, "lsh: expected argument to \"cd\"\n");
-  	} else {
-    		if (chdir(args[1]) != 0) {
-      			perror("lsh");
-    		}
-  	}
-  	return 1;
-}
-
-/*
-   Builtin command: print help.
- */
-int lsh_help(char **args){
-
-  	int i;
-  	printf("Stephen Brennan's LSH\n");
-  	printf("Type program names and arguments, and hit enter.\n");
-  	printf("The following are built in:\n");
-
-  	for (i = 0; i < lsh_num_builtins(); i++) {
-    		printf("  %s\n", builtin_str[i]);
-  	}
-
-  	printf("Use the man command for information on other programs.\n");
-  	return 1;
-}
-
-/*
-   Builtin command: exit.
-   Always returns 0, to terminate execution.
- */
-int lsh_exit(char **args){
-
-  	return 0;
-}
 
 /*
     Launch a program and wait for it to terminate.
@@ -105,25 +37,7 @@ int lsh_launch(char **args){
   	return 1;
 }
 
-/*
-	Execute shell built-in or launch program.
-*/
-int lsh_execute(char **args){
 
-  	int i;
-
-  	if (args[0] == NULL) {
-    		return 1;
-  	}
-
-  	for (i = 0; i < lsh_num_builtins(); i++) {
-    		if (strcmp(args[0], builtin_str[i]) == 0) {
-      		return (*builtin_func[i])(args);
-    		}
-  	}
-
-  	return lsh_launch(args);
-}
 
 /*
     Read a line of input from stdin. 
@@ -235,7 +149,12 @@ void lsh_loop(void){
 		printf("> ");
 		line = lsh_read_line();
 		args = lsh_split_line(line);
-		status = lsh_execute(args);
+
+		if (args[0] == NULL) {
+    			status = 1;
+  		}
+
+		status = lsh_launch(args);
     		free(line);
     		free(args);
 	}
@@ -243,11 +162,18 @@ void lsh_loop(void){
 
 
 int main(int argc, char **argv){
+	// Parses shell arguments
+
 	// Load config files, if any.
 
-	lsh_loop();
+	// Comman History
 
-	// Perform any shutdown/cleanup.
+	// Aliases
+	
+	// Enviroment Variables
+
+	lsh_loop(); // Parsing (Pipes / Quoting / Special Characters/ Wildcards / Shell Expansions)
+
 
 	return EXIT_SUCCESS;
 }
