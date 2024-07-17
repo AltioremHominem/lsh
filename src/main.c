@@ -44,19 +44,6 @@ int lsh_launch(char **args){
  */
 char *lsh_read_line(void){
 
-#ifdef LSH_USE_STD_GETLINE
-  	char *line = NULL;
-  	ssize_t bufsize = 0; // have getline allocate a buffer for us
-  	if (getline(&line, &bufsize, stdin) == -1) {
-    		if (feof(stdin)) {
-      			exit(EXIT_SUCCESS);  // We received an EOF
-    		} else  {
-      			perror("lsh: getline\n");
-      			exit(EXIT_FAILURE);
-    		}
-  	}
-  	return line;
-#else
 	const int LSH_RL_BUFSIZE = 1024;
 
   	int bufsize = LSH_RL_BUFSIZE;
@@ -82,7 +69,6 @@ char *lsh_read_line(void){
     		}
     			position++;
 
-   	 	// If we have exceeded the buffer, reallocate.
     		if (position >= bufsize) {
       			bufsize += LSH_RL_BUFSIZE;
       			buffer = realloc(buffer, bufsize);
@@ -92,7 +78,6 @@ char *lsh_read_line(void){
      			}
     		}
  	}
-#endif
 }
 
 
@@ -164,13 +149,8 @@ void lsh_loop(void){
 int main(int argc, char **argv){
 	// Parses shell arguments
 
-	// Load config files, if any.
+	// Load config files, if any. Command History/Aliases/Enviroment Variables
 
-	// Comman History
-
-	// Aliases
-	
-	// Enviroment Variables
 
 	lsh_loop(); // Parsing (Pipes / Quoting / Special Characters/ Wildcards / Shell Expansions)
 
