@@ -20,11 +20,11 @@ bool lsh_launch(char **args){
   	if (pid == 0) {
     	// Child process
     		if (execvp(args[0], args) == -1) {
-      			perror("lsh");
+      			perror("lsh1");
     		}
   	} else if (pid < 0) {
     		// Error forking
-    		perror("lsh");
+    		perror("lsh2");
 		return false;
   	} else {
     	// Parent process     	
@@ -34,9 +34,6 @@ bool lsh_launch(char **args){
 		}
   	}
 	return true;
-
-
-  	
 }
 
 
@@ -65,6 +62,7 @@ char *lsh_read_line(void){
       			exit(EXIT_SUCCESS);
     		} else if (character == '\n') {
       			buffer[position] = '\0';
+			fflush(stdin);
       			return buffer;
     		} else {
      			buffer[position] = character;
@@ -94,7 +92,7 @@ char **lsh_split_line(char *line){
 
   	int bufsize = LSH_TOK_BUFSIZE, position = 0;
   	char **tokens = malloc(bufsize * sizeof(char*));
-  	char *token, **tokens_backup;
+  	char *token;
 
   	if (!tokens) {
     		fprintf(stderr, "lsh: allocation error\n");
@@ -103,15 +101,22 @@ char **lsh_split_line(char *line){
 
   	token = strtok(line, LSH_TOK_DELIM);
   	while (token != NULL) {
+		if (sizeof(tokens) <= sizeof(token) ){
+			bufsize += LSH_TOK_BUFSIZE;
+			tokens = realloc(tokens, bufsize * sizeof(char*));
+      			if (!tokens) {
+        			fprintf(stderr, "lsh: allocation error\n");
+        			exit(EXIT_FAILURE);
+      			}	
+		}
+
     		tokens[position] = token;
     		position++;
 
     		if (position >= bufsize) {
       			bufsize += LSH_TOK_BUFSIZE;
-      			tokens_backup = tokens;
       			tokens = realloc(tokens, bufsize * sizeof(char*));
       			if (!tokens) {
-				free(tokens_backup);
         			fprintf(stderr, "lsh: allocation error\n");
         			exit(EXIT_FAILURE);
       			}
@@ -139,26 +144,29 @@ bool lsh_loop(void){
 		args = lsh_split_line(line);
 
 		if (args[0] == NULL) {
-			perror("No arguments given");
+			printf("No arguments given");
 			continue;
   		}
 
 		if (strcmp(args[0],"exit") == 0)  {
 			printf("Exiting from the shell");			
-			status = false;
-			break;
+			free(line);
+    			free(args);
+			return false;
   		}
 
 		commandExec = lsh_launch(args);
 		if (!commandExec){
-			perror("lsh:");
 			printf("There was an error in the execution of the program");
+			free(line);
+    			free(args);
 		} 
+		free(line);
+    		free(args);
 
 	
 	}
-	free(line);
-    	free(args);
+	
 	return status;
 }
 
