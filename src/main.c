@@ -143,7 +143,7 @@ bool lsh_loop(void){
 			continue;
   		}
 
-		if (args[0] == "exit") {
+		if (strcmp(args[0],"exit") == 0)  {
 			perror("Exiting from the shell");			
 			status = false;
   		}

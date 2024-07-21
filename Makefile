@@ -1,2 +1,4 @@
+CARGS= -Wall -Wextra
+
 all:
-	gcc -o nimsh main.c -Wall -Wextra
+	gcc -o nimsh src/main.c $(CARGS)
