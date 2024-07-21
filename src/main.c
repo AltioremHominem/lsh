@@ -158,7 +158,7 @@ bool lsh_loop(void){
 	
 	}
 	free(line);
-    free(args);
+    	free(args);
 	return status;
 }
 
@@ -169,7 +169,7 @@ int main(int argc, char **argv){
 	// Load config files, if any. Command History/Aliases/Enviroment Variables
 
 
-	if (!(lsh_loop())) { // Parsing (Pipes / Quoting / Special Characters/ Wildcards / Shell Expansions)
+	if (lsh_loop() == false) { // Parsing (Pipes / Quoting / Special Characters/ Wildcards / Shell Expansions)
 		return EXIT_FAILURE;
 	}
 	
