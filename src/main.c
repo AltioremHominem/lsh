@@ -152,7 +152,7 @@ bool lsh_loop(void){
 			printf("Exiting from the shell");			
 			free(line);
     			free(args);
-			return false;
+			exit(EXIT_FAILURE);
   		}
 
 		commandExec = lsh_launch(args);
