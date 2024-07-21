@@ -11,10 +11,10 @@
 /*
     Launch a program and wait for it to terminate.
  */
-int lsh_launch(char **args){
+bool lsh_launch(char **args){
 
   	pid_t pid;
-  	bool status;
+  	int status;
 
   	pid = fork();
   	if (pid == 0) {
@@ -22,19 +22,21 @@ int lsh_launch(char **args){
     		if (execvp(args[0], args) == -1) {
       			perror("lsh");
     		}
-    		exit(EXIT_FAILURE);
+    		return false;
   	} else if (pid < 0) {
     		// Error forking
     		perror("lsh");
+		return false;
   	} else {
     	// Parent process     	
 		waitpid(pid, &status, WUNTRACED);	
     		while (!WIFEXITED(status) && !WIFSIGNALED(status)){
 			waitpid(pid, &status, WUNTRACED);
 		}
+		return true;
   	}
 
-  	return 1;
+  	
 }
 
 
@@ -56,7 +58,7 @@ char *lsh_read_line(void){
     		exit(EXIT_FAILURE);
   	}
 
-  	while (1) {
+  	while (true) {
     		character = getchar();
 
     		if (character == EOF) {
@@ -124,11 +126,12 @@ char **lsh_split_line(char *line){
 /*
     Loop getting input and executing it.
  */
-void lsh_loop(void){
+bool lsh_loop(void){
 
   	char *line;
   	char **args;
-  	bool status = 1;
+	bool status = true;
+	bool commandExec;
 
 	while (status){
 		printf("> ");
@@ -136,13 +139,25 @@ void lsh_loop(void){
 		args = lsh_split_line(line);
 
 		if (args[0] == NULL) {
-    			status = 1;
+			perror("No arguments given");
+			continue;
   		}
 
-		status = lsh_launch(args);
-    		free(line);
-    		free(args);
+		if (args[0] == "exit") {
+			perror("Exiting from the shell");			
+			status = false;
+  		}
+
+		commandExec = lsh_launch(args);
+		if (!commandExec){
+			perror("There was an error in the execution of the program");
+		} 
+
+	
 	}
+	free(line);
+    	free(args);
+	return status;
 }
 
 
@@ -152,9 +167,10 @@ int main(int argc, char **argv){
 	// Load config files, if any. Command History/Aliases/Enviroment Variables
 
 
-	lsh_loop(); // Parsing (Pipes / Quoting / Special Characters/ Wildcards / Shell Expansions)
-
-
+	if (!(lsh_loop())) { // Parsing (Pipes / Quoting / Special Characters/ Wildcards / Shell Expansions)
+		return EXIT_FAILURE;
+	}
+	
 	return EXIT_SUCCESS;
 }
 
