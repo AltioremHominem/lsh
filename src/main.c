@@ -11,7 +11,7 @@
 /*
     Launch a program and wait for it to terminate.
  */
-bool lsh_launch(char **args){
+int lsh_launch(char **args){
 
   	pid_t pid;
   	int status;
@@ -22,10 +22,10 @@ bool lsh_launch(char **args){
     		if (execvp(args[0], args) == -1) {
       			perror("lsh1");
     		}
+		return 0;
   	} else if (pid < 0) {
     		// Error forking
     		perror("lsh2");
-		return false;
   	} else {
     	// Parent process     	
 		waitpid(pid, &status, WUNTRACED);	
@@ -33,7 +33,7 @@ bool lsh_launch(char **args){
 			waitpid(pid, &status, WUNTRACED);
 		}
   	}
-	return true;
+	return 1;
 }
 
 
@@ -130,26 +130,24 @@ char **lsh_split_line(char *line){
 
 /*
     Loop getting input and executing it.
- */
-bool lsh_loop(void){
+*/
+void lsh_loop(void){
 
   	char *line;
   	char **args;
-	bool status = true;
-	bool commandExec;
+	bool commandExec = false;
 
-	while (status){
+	while (true){
 		printf("> ");
 		line = lsh_read_line();
 		args = lsh_split_line(line);
 
 		if (args[0] == NULL) {
-			printf("No arguments given");
 			continue;
   		}
 
 		if (strcmp(args[0],"exit") == 0)  {
-			printf("Exiting from the shell");			
+			printf("Exiting from the shell");		
 			free(line);
     			free(args);
 			exit(EXIT_FAILURE);
@@ -158,16 +156,11 @@ bool lsh_loop(void){
 		commandExec = lsh_launch(args);
 		if (!commandExec){
 			printf("There was an error in the execution of the program");
-			free(line);
-    			free(args);
 		} 
 		free(line);
-    		free(args);
-
-	
+    		free(args);	
 	}
 	
-	return status;
 }
 
 
@@ -177,9 +170,8 @@ int main(int argc, char **argv){
 	// Load config files, if any. Command History/Aliases/Enviroment Variables
 
 
-	if (lsh_loop() == false) { // Parsing (Pipes / Quoting / Special Characters/ Wildcards / Shell Expansions)
-		return EXIT_FAILURE;
-	}
+	lsh_loop(); // Parsing (Pipes / Quoting / Special Characters/ Wildcards / Shell Expansions)
+	
 	
 	return EXIT_SUCCESS;
 }
