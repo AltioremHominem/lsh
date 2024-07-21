@@ -6,34 +6,83 @@
 #include <string.h>
 #include <stdbool.h>
 
+char *builtin_str[] = {
+  "cd",
+  "help",
+  "exit"
+};
 
+int (*builtin_func[]) (char **) = {
+  	&lsh_cd,
+  	&lsh_help,
+  	&lsh_exit
+};
+
+int lsh_num_builtins() {
+  	return sizeof(builtin_str) / sizeof(char *);
+}
+
+
+int lsh_cd(char **args){
+
+  	if (args[1] == NULL) {
+    		fprintf(stderr, "lsh: expected argument to \"cd\"\n");
+  	} else {
+    		if (chdir(args[1]) != 0) {
+      			perror("lsh");
+    		}
+  	}
+  	return 1;
+}
+
+
+int lsh_help(char **args){
+
+  	int i;
+  	printf("Stephen Brennan's LSH\n");
+  	printf("Type program names and arguments, and hit enter.\n");
+  	printf("The following are built in:\n");
+
+ 	for (i = 0; i < lsh_num_builtins(); i++) {
+    		printf("  %s\n", builtin_str[i]);
+  	}
+
+  	printf("Use the man command for information on other programs.\n");
+  	return 1;
+}
+
+
+bool lsh_exit(char **args){
+
+  	return 0;
+}
 
 /*
     Launch a program and wait for it to terminate.
  */
-int lsh_launch(char **args){
+bool lsh_launch(char **args){
 
   	pid_t pid;
   	int status;
 
   	pid = fork();
   	if (pid == 0) {
-    	// Child process
+    		// Child process
     		if (execvp(args[0], args) == -1) {
-      			perror("lsh1");
+      			perror("lsh");
     		}
-		return 0;
+    		exit(EXIT_FAILURE);
   	} else if (pid < 0) {
-    		// Error forking
-    		perror("lsh2");
-  	} else {
+    	// Error forking
+    	perror("lsh");
+	} else {
     	// Parent process     	
 		waitpid(pid, &status, WUNTRACED);	
     		while (!WIFEXITED(status) && !WIFSIGNALED(status)){
 			waitpid(pid, &status, WUNTRACED);
 		}
   	}
-	return 1;
+	return true;
 }
 
 
@@ -135,7 +184,6 @@ void lsh_loop(void){
 
   	char *line;
   	char **args;
-	bool commandExec = false;
 
 	while (true){
 		printf("> ");
@@ -146,21 +194,18 @@ void lsh_loop(void){
 			continue;
   		}
 
-		if (strcmp(args[0],"exit") == 0)  {
-			printf("Exiting from the shell");		
-			free(line);
-    			free(args);
-			exit(EXIT_FAILURE);
+		for (int i = 0; i < lsh_num_builtins(); i++) {
+    			if (strcmp(args[0], builtin_str[i]) == 0) {
+      				return (*builtin_func[i])(args);
+    			}
   		}
 
-		commandExec = lsh_launch(args);
-		if (!commandExec){
+		if (!lsh_launch(args)){
 			printf("There was an error in the execution of the program");
 		} 
 		free(line);
     		free(args);	
 	}
-	
 }
 
 
