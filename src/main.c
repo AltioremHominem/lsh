@@ -22,7 +22,6 @@ bool lsh_launch(char **args){
     		if (execvp(args[0], args) == -1) {
       			perror("lsh");
     		}
-    		return false;
   	} else if (pid < 0) {
     		// Error forking
     		perror("lsh");
@@ -33,8 +32,9 @@ bool lsh_launch(char **args){
     		while (!WIFEXITED(status) && !WIFSIGNALED(status)){
 			waitpid(pid, &status, WUNTRACED);
 		}
-		return true;
   	}
+	return true;
+
 
   	
 }
@@ -144,19 +144,21 @@ bool lsh_loop(void){
   		}
 
 		if (strcmp(args[0],"exit") == 0)  {
-			perror("Exiting from the shell");			
+			printf("Exiting from the shell");			
 			status = false;
+			break;
   		}
 
 		commandExec = lsh_launch(args);
 		if (!commandExec){
-			perror("There was an error in the execution of the program");
+			perror("lsh:");
+			printf("There was an error in the execution of the program");
 		} 
 
 	
 	}
 	free(line);
-    	free(args);
+    free(args);
 	return status;
 }
 
