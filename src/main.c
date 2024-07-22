@@ -5,6 +5,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <sys/utsname.h>
+#include <errno.h>
+
+int lsh_cd(char **args);
+int lsh_help(char **args);
+int lsh_exit(char **args);
 
 char *builtin_str[] = {
   "cd",
@@ -22,7 +28,6 @@ int lsh_num_builtins() {
   	return sizeof(builtin_str) / sizeof(char *);
 }
 
-
 int lsh_cd(char **args){
 
   	if (args[1] == NULL) {
@@ -35,26 +40,13 @@ int lsh_cd(char **args){
   	return 1;
 }
 
-
 int lsh_help(char **args){
-
-  	int i;
-  	printf("Stephen Brennan's LSH\n");
-  	printf("Type program names and arguments, and hit enter.\n");
-  	printf("The following are built in:\n");
-
- 	for (i = 0; i < lsh_num_builtins(); i++) {
-    		printf("  %s\n", builtin_str[i]);
-  	}
-
-  	printf("Use the man command for information on other programs.\n");
   	return 1;
 }
 
 
-bool lsh_exit(char **args){
-
-  	return 0;
+int lsh_exit(char **args){
+  	return 1;
 }
 
 /*
@@ -74,7 +66,7 @@ bool lsh_launch(char **args){
     		exit(EXIT_FAILURE);
   	} else if (pid < 0) {
     	// Error forking
-    	perror("lsh");
+    		perror("lsh");
 	} else {
     	// Parent process     	
 		waitpid(pid, &status, WUNTRACED);	
@@ -84,8 +76,6 @@ bool lsh_launch(char **args){
   	}
 	return true;
 }
-
-
 
 /*
     Read a line of input from stdin. 
@@ -128,7 +118,6 @@ char *lsh_read_line(void){
     		}
  	}
 }
-
 
 /*
    Split a line into tokens (very naively).
@@ -180,13 +169,33 @@ char **lsh_split_line(char *line){
 /*
     Loop getting input and executing it.
 */
-void lsh_loop(void){
+void lsh_loop(char* system_info,char* sysname){
 
   	char *line;
   	char **args;
 
+	char* cwd;
+
+	long path_max;
+
+    	// Get Path Name
+    	path_max = pathconf(".", _PC_PATH_MAX);
+
+    	if (path_max == -1) {
+        	if (errno == 0) {
+            		fprintf(stderr, "Path size not defined\n");
+        	} else {
+            		perror("pathconf");
+        	}
+        	exit(EXIT_FAILURE);
+    	}
+
+	if (getcwd(cwd, sizeof(cwd)) == NULL) {
+		exit(EXIT_FAILURE);
+	}
+
 	while (true){
-		printf("> ");
+		printf("%s@%s:%s  ",system_info,sysname,cwd);
 		line = lsh_read_line();
 		args = lsh_split_line(line);
 
@@ -196,7 +205,7 @@ void lsh_loop(void){
 
 		for (int i = 0; i < lsh_num_builtins(); i++) {
     			if (strcmp(args[0], builtin_str[i]) == 0) {
-      				return (*builtin_func[i])(args);
+      				(*builtin_func[i])(args);
     			}
   		}
 
@@ -208,16 +217,25 @@ void lsh_loop(void){
 	}
 }
 
-
 int main(int argc, char **argv){
+
+	char *user_name = getlogin();
+	struct utsname system_info;
+    
+    	if (user_name == NULL) {
+        	perror("getlogin");
+        	return 1;
+   	}
+
+    	if (uname(&system_info) != 0) {
+        	perror("uname");
+        	return 1;
+    	}
 	// Parses shell arguments
 
 	// Load config files, if any. Command History/Aliases/Enviroment Variables
 
-
-	lsh_loop(); // Parsing (Pipes / Quoting / Special Characters/ Wildcards / Shell Expansions)
-	
+	lsh_loop(system_info.sysname , user_name); // Parsing (Pipes / Quoting / Special Characters/ Wildcards / Shell Expansions)
 	
 	return EXIT_SUCCESS;
 }
-
